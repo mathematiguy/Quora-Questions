@@ -1,0 +1,24 @@
+USING PERIODIC COMMIT	// default value 1000
+LOAD CSV WITH HEADERS FROM "file:///data/train.csv" AS line
+
+WITH toInt(line.id) AS id, 							// id for each pair
+     toInt(line.qid1) AS qid1, 						// unique id for question 1
+     toInt(line.qid2) AS qid2, 						// unique id for question 2
+     line.question1 AS question1, 					// question 1 text
+     line.question2 AS question2, 					// question 2 text
+     toBoolean(line.is_duplicate) AS is_duplicate	// T/F if qs are duplicates
+
+// Create question nodes
+MERGE (q1:Question {qid: qid1, text: question1})
+MERGE (q2:Question {qid: qid2, text: question2})
+
+// Create relationships between duplicate questions
+MERGE (q1)-[r1:IS_DUPLICATE]->(q2)
+MERGE (q2)-[r2:IS_DUPLICATE]->(q1)
+
+// Set duplicate values
+SET r1.is_duplicate = is_duplicate
+SET r2.is_duplicate = is_duplicate
+
+SET r1.id = id
+SET r2.id = id
